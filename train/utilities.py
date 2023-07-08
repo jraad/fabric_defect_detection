@@ -79,21 +79,26 @@ class AITEXPatched(AITEX):
         super(AITEXPatched, self).__init__(*args, **kwargs)
 
         self.num_classes = 2
-        self.classes = {0: "normal", 1: "defect"}
+        self.class_ref = {0: "normal", 1: "defect"}
 
         self.transform = transform
         self.patched_images = []
         self.patched_masks = []
         self.has_defect = []
+        self.patched_labels = []
         for index, img in enumerate(self.images):
             img_new = cv2.resize(img, (4096, 256)) 
             img_new = cv2.equalizeHist(img_new) / 255.
             self.patched_images.extend([torch.Tensor(img_new[:,i:i+256]).reshape((1, 256, 256)) for i in range(0, 4096, 256)])
+
             mask_new = cv2.resize(self.masks[index], (4096, 256))
-            mask_patches = [mask_new[:,i:i+256] for i in range(0, 4096, 256)]
+            mask_patches = [torch.Tensor(mask_new[:,i:i+256]).reshape((1, 256, 256)) for i in range(0, 4096, 256)]
             self.patched_masks.extend(mask_patches)
 
-            self.has_defect.extend([1 if np.sum(x) > 0 else 0 for x in mask_patches])
+            self.has_defect.extend([1 if torch.sum(x) > 0 else 0 for x in mask_patches])
+
+            true_label = self.classes[index]
+            self.patched_labels.extend([true_label if torch.sum(x) > 0 else 0 for x in mask_patches])
 
     def __len__(self):
         """Get length of full dataset."""
@@ -105,3 +110,25 @@ class AITEXPatched(AITEX):
             idx = idx.tolist()
         
         return self.transform(self.patched_images[idx]), self.has_defect[idx]
+    
+class AITEXPatchedSegmentation(AITEXPatched):
+    """Extension of previously defined object for patching to 256^2."""
+    def __init__(self, *args, **kwargs,):
+        super(AITEXPatchedSegmentation, self).__init__(*args, **kwargs)
+
+        self.defect_indices = [x for x,y in enumerate(self.has_defect) if y==1]
+        self.defect_images = [self.patched_images[x] for x in self.defect_indices]
+        self.defect_masks = [self.patched_masks[x] for x in self.defect_indices]
+        self.defect_labels = [self.patched_labels[x] for x in self.defect_indices]
+    
+    def __len__(self):
+        """Get length of full dataset."""
+        return len(self.defect_images)    
+    
+    def __getitem__(self, idx):
+        """Return specific index of dataset."""
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        
+        return self.transform(self.defect_images[idx]), self.transform(self.defect_masks[idx]) #, self.defect_labels[idx]
+    
