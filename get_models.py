@@ -3,7 +3,7 @@ import os
 
 models_to_download = [
     {
-        "url": "https://drive.google.com/file/d/1DAGs5eG-jTSvWMNUVMPGkSVfBO_kfb0G/view?usp=sharing",
+        "url": "https://drive.google.com/uc?id=1DAGs5eG-jTSvWMNUVMPGkSVfBO_kfb0G",
         "name": "unet_seg_200epoch.pt"
     }
 ]
