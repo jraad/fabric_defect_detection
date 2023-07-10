@@ -47,6 +47,10 @@ For classification (binary_patch_classification.ipynb), I trained a relatively s
 
 ![](data/images/classifier_architecture.svg)
 
+Binary Cross Entropy was used as the training loss function. This is appropriate in this case because we are dealing with binary classification. This essentially minimizes the probability output such that if the true class is 1 and the probability is close to 1, the loss value is close to zero.
+
+$BCE = -\frac{1}{N}\sum_{i=1}^N y_i \log(p(y_i)) + (1 - y_i) \log(1 - p(y_i))$
+
 These feature extraction layers were followed by two sets of fully-connected dense layers, and a single-value sigmoid layer on the output. With this approach, I obtained an F1 Score of 0.975 with the following confusion matrix:
 
 ![](data/images/cm.png)
@@ -56,7 +60,15 @@ For segmentation, I used the Improved UNet architecture (unet_segmentation.ipynb
 
 ![](data/images/unet_architecture.svg)
 
-Specifically, I used a hybrid loss that balanced between the Focal Tversky Loss and the classic DICE Loss, both often used for segmentation. The Focal loss does well in sparse cases because it prioritizes identifying true positives in an otherwise sparse domain. With this approach, I achieved a mean IOU score of 0.38 for the train dataset and 0.46 for the test dataset. While these scores appear low, the model was a) able to effectively localize most anomalies, and b) it is important to remember that even in patched images, the defect pixels are relatively small and rare, and so even a small handful of stray pixels in prediction can impact the results. With more time, this approach can be improved upon further as well.
+Specifically, I used a hybrid loss that balanced between the Focal Tversky Loss and the classic DICE Loss, both often used for segmentation. The Focal loss does well in sparse cases because it prioritizes identifying true positives in an otherwise sparse domain.
+
+$\text{DICE} = \frac{2 \sum p_{true} * p_{pred}}{\sum p_{true}^2 + \sum p_{pred}^2}$
+
+$\text{Focal} = \frac{\text{True Positive}}{\text{True Positive} + \alpha\cdot\text{False Negative} + \beta\cdot\text{False Positive}}$
+
+The Focal loss allows us to choose weighting parameters $\alpha$ and $\beta$ such that $\alpha + \beta = 1$. As such, we can selectively penalize false negatives, which is immensely useful when ground truth positives are relatively rare. 
+
+With this approach, I achieved a mean IOU score of 0.38 for the train dataset and 0.46 for the test dataset. While these scores appear low, the model was a) able to effectively localize most anomalies, and b) it is important to remember that even in patched images, the defect pixels are relatively small and rare, and so even a small handful of stray pixels in prediction can impact the results. With more time, this approach can be improved upon further as well.
 
 Other approaches I attempted included:
 
