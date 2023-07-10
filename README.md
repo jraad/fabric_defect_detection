@@ -43,11 +43,20 @@ One notable challenge of the dataset is sparsity of information. While there are
 
 Light preprocessing was used. After resizing images to (256, 4096), I patched them into 16 different (256, 256) images and applied histogram-based contrast normalization - this helped ensure relative homogeneity from image to image and drastically improved the modeling results.
 
-For classification (binary_patch_classification.ipynb), I trained a relatively small convolutional neural network (CNN) with 4 blocks of 2D Convolutions, ReLU Activations, and 2D Max Pooling. These feature extraction layers were followed by two sets of fully-connected dense layers, and a single-value sigmoid layer on the output. With this approach, I obtained an F1 Score of 0.975 with the following confusion matrix:
+For classification (binary_patch_classification.ipynb), I trained a relatively small convolutional neural network (CNN) with 4 blocks of 2D Convolutions, ReLU Activations, and 2D Max Pooling.
 
-![](cm.png)
+![](data/images/classifier_architecture.svg)
 
-For segmentation, I used the Improved UNet architecture (unet_segmentation.ipynb), with some code borrowed from an unrelated [Kaggle competition](https://www.kaggle.com/code/alexj21/pytorch-eda-unet-from-scratch-finetuning). I had code for some smaller UNet architectures that I'd written in the past, but this particular set of code included a more robust UNet implementation, as well as loss functions that were incredibly useful for the training process. Specifically, I used a hybrid loss that balanced between the Focal Tversky Loss and the classic DICE Loss, both often used for segmentation. The Focal loss does well in sparse cases because it prioritizes identifying true positives in an otherwise sparse domain. With this approach, I achieved a mean IOU score of 0.38 for the train dataset and 0.46 for the test dataset. While these scores appear low, the model was a) able to effectively localize most anomalies, and b) it is important to remember that even in patched images, the defect pixels are relatively small and rare, and so even a small handful of stray pixels in prediction can impact the results. With more time, this approach can be improved upon further as well.
+These feature extraction layers were followed by two sets of fully-connected dense layers, and a single-value sigmoid layer on the output. With this approach, I obtained an F1 Score of 0.975 with the following confusion matrix:
+
+![](data/images/cm.png)
+
+For segmentation, I used the Improved UNet architecture (unet_segmentation.ipynb), with some code borrowed from an unrelated [Kaggle competition](https://www.kaggle.com/code/alexj21/pytorch-eda-unet-from-scratch-finetuning). I had code for some smaller UNet architectures that I'd written in the past, but this particular set of code included a more robust UNet implementation, as well as loss functions that were incredibly useful for the training process. 
+
+
+![](data/images/unet_architecture.svg)
+
+Specifically, I used a hybrid loss that balanced between the Focal Tversky Loss and the classic DICE Loss, both often used for segmentation. The Focal loss does well in sparse cases because it prioritizes identifying true positives in an otherwise sparse domain. With this approach, I achieved a mean IOU score of 0.38 for the train dataset and 0.46 for the test dataset. While these scores appear low, the model was a) able to effectively localize most anomalies, and b) it is important to remember that even in patched images, the defect pixels are relatively small and rare, and so even a small handful of stray pixels in prediction can impact the results. With more time, this approach can be improved upon further as well.
 
 Other approaches I attempted included:
 
@@ -59,7 +68,7 @@ Other approaches I attempted included:
 ## UI
 The Streamlit UI allows an upload of a .png fabric image. This image is processed and each patch is run through the binary classification algorithm. If a defect is detected in any patch, the corresponing patches are run through the segmentation algorithm. The algorithm returns an image with a border around the defective patch in red, and the defect itself highlighted in green, as below. If no defect is detected, only one image is displayed.
 
-![](ui.png)
+![](data/images/ui.png)
 
 ## Limitations and Future Work
 This work was conducted in a short amount of time (a few days). With more time, I see great promise in the object detection approaches, specifically for identifying the type of defect (as opposed to just segmenting any defect, as with the UNet approach). That being said, from a practically perspective, a manufacturing company is likely first and foremost interested in knowing whether a given fabric sample has any defect, in order to remove them from their line. This approach works quite well for that, but for more robust and localized defect detection, different methods can and should be explored.
